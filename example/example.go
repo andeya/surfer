@@ -11,11 +11,15 @@ import (
 func main() {
 	var values, _ = url.ParseQuery("username=123456@qq.com&password=123456&login_btn=login_btn&submit=login_btn")
 	log.Println("values:", values)
-	var files = []surfer.PostFile{
-		{
-			Fieldname: "abc",
-			Filename:  "filename.txt",
-			Bytes:     []byte("files test."),
+	var form = surfer.Form{
+		Values: values,
+		Files: map[string][]surfer.File{
+			"abc": {
+				{
+					Filename: "filename.txt",
+					Bytes:    []byte("files test."),
+				},
+			},
 		},
 	}
 
@@ -27,30 +31,31 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(resp.Header)
+	log.Printf("baidu resp.Status: %s\nresp.Header: %#v\n", resp.Status, resp.Header)
 
 	b, err := ioutil.ReadAll(resp.Body)
-	log.Println(string(b), err)
-
-	log.Println("********************************************* surf内核GET下载测试完毕 *********************************************")
+	resp.Body.Close()
+	log.Printf("baidu resp.Body: %s\nerr: %v", b, err)
 
 	// 默认使用surf内核下载
 	log.Println("********************************************* surf内核POST下载测试开始 *********************************************")
-	resp, err = surfer.Download(&surfer.Request{
+	req := &surfer.Request{
 		Url:    "http://accounts.lewaos.com/",
 		Method: "POST",
-		Values: values,
-		Files:  files,
-	})
+		Body:   form,
+	}
+	b, err = req.ReadBody()
+	log.Printf("req body: %s\nerr: %v", b, err)
+
+	resp, err = surfer.Download(req)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(resp.Header)
+	log.Printf("lewaos resp.Status: %s\nresp.Header: %#v\n", resp.Status, resp.Header)
 
 	b, err = ioutil.ReadAll(resp.Body)
-	log.Println(string(b), err)
-
-	log.Println("********************************************* surf内核POST下载测试完毕 *********************************************")
+	resp.Body.Close()
+	log.Printf("lewaos resp.Body: %s\nerr: %v", b, err)
 
 	log.Println("********************************************* phantomjs内核GET下载测试开始 *********************************************")
 
@@ -62,12 +67,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(resp.Header)
+
+	log.Printf("baidu resp.Status: %s\nresp.Header: %#v\n", resp.Status, resp.Header)
 
 	b, err = ioutil.ReadAll(resp.Body)
-	log.Println(string(b), err)
-
-	log.Println("********************************************* phantomjs内核GET下载测试完毕 *********************************************")
+	resp.Body.Close()
+	log.Printf("baidu resp.Body: %s\nerr: %v", b, err)
 
 	log.Println("********************************************* phantomjs内核POST下载测试开始 *********************************************")
 
@@ -76,21 +81,18 @@ func main() {
 		DownloaderID: 1,
 		Url:          "http://accounts.lewaos.com/",
 		Method:       "POST",
-		Values:       values,
+		Body:         form,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println(resp.Header)
+	log.Printf("lewaos resp.Status: %s\nresp.Header: %#v\n", resp.Status, resp.Header)
 
 	b, err = ioutil.ReadAll(resp.Body)
-	log.Println(string(b), err)
-
-	log.Println("********************************************* phantomjs内核POST下载测试完毕 *********************************************")
-
 	resp.Body.Close()
+	log.Printf("lewaos resp.Body: %s\nerr: %v", b, err)
 
 	surfer.DestroyJsFiles()
 
-	time.Sleep(600e9)
+	time.Sleep(10e9)
 }

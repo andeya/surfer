@@ -16,7 +16,6 @@ package surfer
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -28,21 +27,23 @@ import (
 	"time"
 )
 
-// 基于Phantomjs的下载器实现，作为surfer的补充
-// 效率较surfer会慢很多，但是因为模拟浏览器，破防性更好
-// 支持UserAgent/TryTimes/RetryPause/自定义js
 type (
+	// Phantom 基于Phantomjs的下载器实现，作为surfer的补充
+	// 效率较surfer会慢很多，但是因为模拟浏览器，破防性更好
+	// 支持UserAgent/TryTimes/RetryPause/自定义js
 	Phantom struct {
 		PhantomjsFile string            //Phantomjs完整文件名
 		TempJsDir     string            //临时js存放目录
 		jsFileMap     map[string]string //已存在的js文件
 	}
+	// Response 用于解析Phantomjs的响应内容
 	Response struct {
-		Cookie string
-		Body   string
+		Cookies []string
+		Body    string
 	}
 )
 
+// NewPhantom 创建一个Phantomjs下载器
 func NewPhantom(phantomjsFile, tempJsDir string) Surfer {
 	phantom := &Phantom{
 		PhantomjsFile: phantomjsFile,
@@ -61,16 +62,15 @@ func NewPhantom(phantomjsFile, tempJsDir string) Surfer {
 		log.Printf("[E] Surfer: %v\n", err)
 		return phantom
 	}
-	phantom.createJsFile("get", getJs)
-	phantom.createJsFile("post", postJs)
+	phantom.createJsFile("js", js)
 	return phantom
 }
 
-// 实现surfer下载器接口
-func (self *Phantom) Download(req *Request) (resp *http.Response, err error) {
+// Download 实现surfer下载器接口
+func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) {
 	err = req.prepare()
 	if err != nil {
-		return
+		return resp, err
 	}
 	var encoding = "utf-8"
 	if _, params, err := mime.ParseMediaType(req.Header.Get("Content-Type")); err == nil {
@@ -81,38 +81,28 @@ func (self *Phantom) Download(req *Request) (resp *http.Response, err error) {
 
 	req.Header.Del("Content-Type")
 
+	var b, _ = req.ReadBody()
+
 	resp = req.writeback(resp)
 
-	var args []string
-	switch req.Method {
-	case "GET":
-		args = []string{
-			self.jsFileMap["get"],
-			req.Url,
-			req.Header.Get("Cookie"),
-			encoding,
-			req.Header.Get("User-Agent"),
-		}
-	case "POST":
-		args = []string{
-			self.jsFileMap["post"],
-			req.Url,
-			req.Header.Get("Cookie"),
-			encoding,
-			req.Header.Get("User-Agent"),
-			req.Values.Encode(),
-		}
-	default:
-		return nil, errors.New("Unsupported HTTP method: " + req.Method)
+	var args = []string{
+		phantom.jsFileMap["js"],
+		req.Url,
+		req.Header.Get("Cookie"),
+		encoding,
+		req.Header.Get("User-Agent"),
+		string(b),
+		strings.ToLower(req.Method),
 	}
 
 	for i := 0; i < req.TryTimes; i++ {
-		cmd := exec.Command(self.PhantomjsFile, args...)
+		cmd := exec.Command(phantom.PhantomjsFile, args...)
 		if resp.Body, err = cmd.StdoutPipe(); err != nil {
 			time.Sleep(req.RetryPause)
 			continue
 		}
-		if cmd.Start() != nil || resp.Body == nil {
+		err = cmd.Start()
+		if err != nil || resp.Body == nil {
 			time.Sleep(req.RetryPause)
 			continue
 		}
@@ -129,7 +119,10 @@ func (self *Phantom) Download(req *Request) (resp *http.Response, err error) {
 			continue
 		}
 		resp.Header = req.Header
-		resp.Header.Set("Set-Cookie", retResp.Cookie)
+		delete(resp.Header, "Set-Cookie")
+		for _, c := range retResp.Cookies {
+			resp.Header.Add("Set-Cookie", c)
+		}
 		resp.Body = ioutil.NopCloser(strings.NewReader(retResp.Body))
 		break
 	}
@@ -139,18 +132,18 @@ func (self *Phantom) Download(req *Request) (resp *http.Response, err error) {
 		resp.Status = http.StatusText(http.StatusOK)
 	} else {
 		resp.StatusCode = http.StatusBadGateway
-		resp.Status = http.StatusText(http.StatusBadGateway)
+		resp.Status = err.Error()
 	}
-	return
+	return resp, err
 }
 
-//销毁js临时文件
-func (self *Phantom) DestroyJsFiles() {
-	p, _ := filepath.Split(self.TempJsDir)
+// DestroyJsFiles 销毁js临时文件
+func (phantom *Phantom) DestroyJsFiles() {
+	p, _ := filepath.Split(phantom.TempJsDir)
 	if p == "" {
 		return
 	}
-	for _, filename := range self.jsFileMap {
+	for _, filename := range phantom.jsFileMap {
 		os.Remove(filename)
 	}
 	if len(WalkDir(p)) == 1 {
@@ -158,63 +151,25 @@ func (self *Phantom) DestroyJsFiles() {
 	}
 }
 
-func (self *Phantom) createJsFile(fileName, jsCode string) {
-	fullFileName := filepath.Join(self.TempJsDir, fileName)
+func (phantom *Phantom) createJsFile(fileName, jsCode string) {
+	fullFileName := filepath.Join(phantom.TempJsDir, fileName)
 	// 创建并写入文件
 	f, _ := os.Create(fullFileName)
 	f.Write([]byte(jsCode))
 	f.Close()
-	self.jsFileMap[fileName] = fullFileName
+	phantom.jsFileMap[fileName] = fullFileName
 }
 
 /*
-* GET method
-* system.args[0] == get.js
-* system.args[1] == url
-* system.args[2] == cookie
-* system.args[3] == pageEncode
-* system.args[4] == userAgent
- */
-
-const getJs string = `
-var system = require('system');
-var page = require('webpage').create();
-var url = system.args[1];
-var cookie = system.args[2];
-var pageEncode = system.args[3];
-var userAgent = system.args[4];
-page.onResourceRequested = function(requestData, request) {
-    request.setHeader('Cookie', cookie)
-};
-phantom.outputEncoding = pageEncode;
-page.settings.userAgent = userAgent;
-page.open(url, function(status) {
-    if (status !== 'success') {
-        console.log('Unable to access network');
-    } else {
-       	var cookie = page.evaluate(function(s) {
-            return document.cookie;
-        });
-        var resp = {
-            "Cookie": cookie,
-            "Body": page.content
-        };
-        console.log(JSON.stringify(resp));
-    }
-    phantom.exit();
-});
-`
-
-/*
-* POST method
-* system.args[0] == post.js
+* system.args[0] == js
 * system.args[1] == url
 * system.args[2] == cookie
 * system.args[3] == pageEncode
 * system.args[4] == userAgent
 * system.args[5] == postdata
+* system.args[6] == method
  */
-const postJs string = `
+const js string = `
 var system = require('system');
 var page = require('webpage').create();
 var url = system.args[1];
@@ -222,20 +177,30 @@ var cookie = system.args[2];
 var pageEncode = system.args[3];
 var userAgent = system.args[4];
 var postdata = system.args[5];
+var method = system.args[6];
 page.onResourceRequested = function(requestData, request) {
     request.setHeader('Cookie', cookie)
 };
 phantom.outputEncoding = pageEncode;
 page.settings.userAgent = userAgent;
-page.open(url, 'post', postdata, function(status) {
-    if (status !== 'success') {
+page.open(url, method, postdata, function(status) {
+   if (status !== 'success') {
         console.log('Unable to access network');
     } else {
-        var cookie = page.evaluate(function(s) {
-            return document.cookie;
-        });
+        var cookies = new Array();
+        for(var i in page.cookies) {
+        	var cookie = page.cookies[i];
+        	var c = cookie["name"] + "=" + cookie["value"];
+        	for (var obj in cookie){
+        		if(obj == 'name' || obj == 'value'){
+        			continue;
+        		}
+				c +=  "; " +　obj + "=" +  cookie[obj];
+    		}
+			cookies[i] = c;
+		}
         var resp = {
-            "Cookie": cookie,
+            "Cookies": cookies,
             "Body": page.content
         };
         console.log(JSON.stringify(resp));

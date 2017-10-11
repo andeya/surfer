@@ -13,9 +13,8 @@
 // limitations under the License.
 //
 // Package surfer is a high level concurrency http client.
-// 
 // It has `surf` and` phantom` download engines, highly simulated browser behavior, the function of analog login and so on.
-// 
+//
 // Features:
 // - Both surf and phantomjs engines are supported
 // - Support random User-Agent
@@ -24,7 +23,7 @@
 //
 // Usage:
 // package main
-// 
+//
 // import (
 //     "github.com/henrylee2cn/surfer"
 //     "io/ioutil"

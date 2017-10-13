@@ -16,6 +16,7 @@ package surfer
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"mime"
@@ -93,6 +94,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		req.Header.Get("User-Agent"),
 		string(b),
 		strings.ToLower(req.Method),
+		fmt.Sprint(req.PhantomTimeout / time.Millisecond),
 	}
 
 	for i := 0; i < req.TryTimes; i++ {
@@ -168,6 +170,7 @@ func (phantom *Phantom) createJsFile(fileName, jsCode string) {
 * system.args[4] == userAgent
 * system.args[5] == postdata
 * system.args[6] == method
+* system.args[7] == timeout
  */
 const js string = `
 var system = require('system');
@@ -178,33 +181,56 @@ var pageEncode = system.args[3];
 var userAgent = system.args[4];
 var postdata = system.args[5];
 var method = system.args[6];
-page.onResourceRequested = function(requestData, request) {
-    request.setHeader('Cookie', cookie)
-};
+var timeout = system.args[7];
+var ret = "";
+var exit = function() {
+  console.log(ret);
+  phantom.exit();
+}
+
 phantom.outputEncoding = pageEncode;
 page.settings.userAgent = userAgent;
-page.open(url, method, postdata, function(status) {
-   if (status !== 'success') {
-        console.log('Unable to access network');
-    } else {
-        var cookies = new Array();
-        for(var i in page.cookies) {
-        	var cookie = page.cookies[i];
-        	var c = cookie["name"] + "=" + cookie["value"];
-        	for (var obj in cookie){
-        		if(obj == 'name' || obj == 'value'){
-        			continue;
-        		}
-				c +=  "; " +　obj + "=" +  cookie[obj];
-    		}
-			cookies[i] = c;
-		}
-        var resp = {
-            "Cookies": cookies,
-            "Body": page.content
-        };
-        console.log(JSON.stringify(resp));
+page.settings.resourceTimeout = timeout;
+page.settings.XSSAuditingEnabled = true;
+page.onResourceRequested = function(requestData, request) {
+  request.setHeader('Cookie', cookie)
+};
+page.onError = function(msg, trace) {};
+page.onResourceError = function(resourceError) {};
+page.onLoadFinished = function(status) {
+  if (status !== 'success') {
+    console.log('Unable to access network');
+  } else {
+    var cookies = new Array();
+    for (var i in page.cookies) {
+      var cookie = page.cookies[i];
+      var c = cookie["name"] + "=" + cookie["value"];
+      for (var obj in cookie) {
+        if (obj == 'name' || obj == 'value') {
+          continue;
+        }
+        c += "; " + 　obj + "=" + cookie[obj];
+      }
+      cookies[i] = c;
     }
-    phantom.exit();
-});
+
+    var resp = {
+      "Cookies": cookies,
+      "Body": page.content
+    };
+
+    if (page.content.indexOf("div") != -1) {
+      ret = JSON.stringify(resp);
+      exit();
+    }
+  }
+};
+
+page.open(url, method, postdata, function(status) {});
+
+if (timeout > 0) {
+  setTimeout(function() {
+    exit();
+  }, timeout)
+}
 `

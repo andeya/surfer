@@ -59,6 +59,9 @@ func main() {
 
 	log.Println("********************************************* phantomjs内核GET下载测试开始 *********************************************")
 
+	// 指定phantomjs可执行文件的位置
+	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe")
+
 	// 指定使用phantomjs内核下载
 	resp, err = surfer.Download(&surfer.Request{
 		Url:          "http://www.baidu.com/",

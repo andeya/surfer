@@ -33,6 +33,7 @@ func main() {
     log.Println(string(b), err)
 
     // Use phantomjs engine
+    surfer.SetPhantomJsFilePath("Path to phantomjs.exe")
     resp, err = surfer.Download(&surfer.Request{
         Url:          "http://github.com/henrylee2cn",
         DownloaderID: 1,

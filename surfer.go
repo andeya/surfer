@@ -13,9 +13,9 @@
 // limitations under the License.
 //
 // Package surfer is a high level concurrency http client.
-// 
+//
 // It has `surf` and` phantom` download engines, highly simulated browser behavior, the function of analog login and so on.
-// 
+//
 // Features:
 // - Both surf and phantomjs engines are supported
 // - Support random User-Agent
@@ -24,7 +24,7 @@
 //
 // Usage:
 // package main
-// 
+//
 // import (
 //     "github.com/henrylee2cn/surfer"
 //     "io/ioutil"
@@ -86,6 +86,11 @@ func Download(req *Request) (resp *http.Response, err error) {
 		resp, err = phantom.Download(req)
 	}
 	return
+}
+
+// 指定phantomjs可执行文件的位置
+func SetPhantomJsFilePath(filePath string) {
+	phantomjsFile = filePath
 }
 
 // DestroyJsFiles 销毁Phantomjs的js临时文件

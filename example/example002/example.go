@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
-	"os"
 	"time"
 )
 
@@ -20,7 +19,7 @@ func main() {
 		Values: values,
 	}
 
-	// surf内核GET下载测试开始---------------------------------------------------------------------------
+	// 1.surf内核GET下载测试开始
 	log.Println("surf内核GET下载测试开始" + HR)
 	resp, err := surfer.Download(&surfer.Request{
 		Url: "http://httpbin.org/get",
@@ -34,7 +33,7 @@ func main() {
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
 
-	// surf内核POST下载测试开始---------------------------------------------------------------------------
+	// 2.surf内核POST下载测试开始
 	log.Println("surf内核POST下载测试开始" + HR)
 	req := &surfer.Request{
 		Url:    "http://httpbin.org/post",
@@ -43,7 +42,6 @@ func main() {
 	}
 	b, err = req.ReadBody()
 	log.Println("req.Body=", string(b))
-
 	resp, err = surfer.Download(req)
 	handleError(err)
 	log.Println("resp.Status=", resp.Status)
@@ -54,15 +52,15 @@ func main() {
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
 
-	// phantomjs内核GET下载测试开始---------------------------------------------------------------------------
+	// 3.phantomjs内核GET下载测试开始
 	log.Println("phantomjs内核GET下载测试开始" + HR)
-	// 指定phantomjs可执行文件的位置
-	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe")
-
+	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe") // 指定phantomjs可执行文件的位置
 	resp, err = surfer.Download(&surfer.Request{
-		Url:          "http://httpbin.org/get",
-		DownloaderID: 1,
+		Url:            "http://httpbin.org/get",
+		DownloaderID:   1,
+		PhantomTimeout: time.Millisecond * 2000, //设置超时时间
 	})
+
 	handleError(err)
 	log.Println("resp.Status=", resp.Status)
 	log.Println("resp.Header=", resp.Header)
@@ -72,16 +70,14 @@ func main() {
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
 
-	os.Exit(2)
-
-	//phantomjs内核POST下载测试开始---------------------------------------------------------------------------
+	// 4.phantomjs内核POST下载测试开始---------------------------------------------------------------------------
 	log.Println("phantomjs内核POST下载测试开始" + HR)
-	// 指定使用phantomjs内核下载
 	resp, err = surfer.Download(&surfer.Request{
-		DownloaderID: 1,
-		Url:          "http://accounts.lewaos.com/",
-		Method:       "POST",
-		Body:         form,
+		DownloaderID:   1,
+		Url:            "http://httpbin.org/post",
+		Method:         "POST",
+		Body:           form,
+		PhantomTimeout: time.Millisecond * 2000, //设置超时时间
 	})
 	handleError(err)
 	log.Println("resp.Status=", resp.Status)
@@ -90,7 +86,7 @@ func main() {
 	b, err = ioutil.ReadAll(resp.Body)
 	handleError(err)
 	resp.Body.Close()
-	log.Println("resp.Body=", resp.Body)
+	log.Println("resp.Body=", string(b))
 
 	surfer.DestroyJsFiles()
 

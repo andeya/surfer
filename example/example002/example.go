@@ -54,7 +54,7 @@ func main() {
 
 	// 3.phantomjs内核GET下载测试开始
 	log.Println("phantomjs内核GET下载测试开始" + HR)
-	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe") // 指定phantomjs可执行文件的位置
+	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe") // 指定phantomjs可执行文件的位置，绝对路径
 	resp, err = surfer.Download(&surfer.Request{
 		Url:            "http://httpbin.org/get",
 		DownloaderID:   1,
@@ -71,6 +71,7 @@ func main() {
 	log.Println("resp.Body=", string(b))
 
 	// 4.phantomjs内核POST下载测试开始---------------------------------------------------------------------------
+	surfer.SetPhantomJsFilePath("../phantomjs.exe") //相对路径
 	log.Println("phantomjs内核POST下载测试开始" + HR)
 	resp, err = surfer.Download(&surfer.Request{
 		DownloaderID:   1,

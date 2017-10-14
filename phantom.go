@@ -94,7 +94,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		req.Header.Get("User-Agent"),
 		string(b),
 		strings.ToLower(req.Method),
-		fmt.Sprint(req.PhantomTimeout / time.Millisecond),
+		fmt.Sprint(int(req.PhantomTimeout / time.Millisecond)),
 	}
 
 	for i := 0; i < req.TryTimes; i++ {

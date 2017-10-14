@@ -96,6 +96,6 @@ func main() {
 
 func handleError(err error) {
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("surfer download error:", err)
 	}
 }

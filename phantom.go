@@ -94,32 +94,32 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		req.Header.Get("User-Agent"),
 		string(b),
 		strings.ToLower(req.Method),
-		fmt.Sprint(int(req.PhantomTimeout / time.Millisecond)),
+		fmt.Sprint(int(req.DialTimeout / time.Millisecond)),
 	}
 
 	for i := 0; i < req.TryTimes; i++ {
+		if i != 0 {
+			time.Sleep(req.RetryPause)
+		}
+
 		cmd := exec.Command(phantom.PhantomjsFile, args...)
 		if resp.Body, err = cmd.StdoutPipe(); err != nil {
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		err = cmd.Start()
 		if err != nil || resp.Body == nil {
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		var b []byte
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("surfer read phantomjs out error:", err)
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		retResp := Response{}
 		err = json.Unmarshal(b, &retResp)
 		if err != nil {
 			log.Println("surfer phantomjs out:", string(b))
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		resp.Header = req.Header

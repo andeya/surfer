@@ -97,7 +97,7 @@ func (r *Request) prepare() error {
 		r.ConnTimeout = DefaultConnTimeout
 	}
 
-	if r.TryTimes <= 0 {
+	if r.TryTimes == 0 {
 		r.TryTimes = DefaultTryTimes
 	}
 

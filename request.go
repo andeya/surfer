@@ -69,8 +69,6 @@ type Request struct {
 	// 0为Surf高并发下载器，各种控制功能齐全
 	// 1为PhantomJS下载器，特点破防力强，速度慢，低并发
 	DownloaderID int
-	// PhantomJS 抗反爬超时时间
-	PhantomTimeout time.Duration
 
 	client *http.Client
 }

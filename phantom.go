@@ -94,30 +94,32 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		req.Header.Get("User-Agent"),
 		string(b),
 		strings.ToLower(req.Method),
-		fmt.Sprint(req.PhantomTimeout / time.Millisecond),
+		fmt.Sprint(int(req.DialTimeout / time.Millisecond)),
 	}
 
 	for i := 0; i < req.TryTimes; i++ {
+		if i != 0 {
+			time.Sleep(req.RetryPause)
+		}
+
 		cmd := exec.Command(phantom.PhantomjsFile, args...)
 		if resp.Body, err = cmd.StdoutPipe(); err != nil {
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		err = cmd.Start()
 		if err != nil || resp.Body == nil {
-			time.Sleep(req.RetryPause)
 			continue
 		}
 		var b []byte
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			time.Sleep(req.RetryPause)
+			log.Println("surfer read phantomjs out error:", err)
 			continue
 		}
 		retResp := Response{}
 		err = json.Unmarshal(b, &retResp)
 		if err != nil {
-			time.Sleep(req.RetryPause)
+			log.Println("surfer phantomjs out:", string(b))
 			continue
 		}
 		resp.Header = req.Header
@@ -183,23 +185,34 @@ var postdata = system.args[5];
 var method = system.args[6];
 var timeout = system.args[7];
 var ret = "";
-var exit = function() {
+var exit = function () {
   console.log(ret);
   phantom.exit();
-}
+};
 
 phantom.outputEncoding = pageEncode;
 page.settings.userAgent = userAgent;
 page.settings.resourceTimeout = timeout;
 page.settings.XSSAuditingEnabled = true;
-page.onResourceRequested = function(requestData, request) {
+page.onResourceRequested = function (requestData, request) {
   request.setHeader('Cookie', cookie)
 };
-page.onError = function(msg, trace) {};
-page.onResourceError = function(resourceError) {};
-page.onLoadFinished = function(status) {
+page.onError = function (msg, trace) {
+  console.log("error:" + msg);
+};
+page.onResourceTimeout = function (e) {
+  console.log("phantomjs onResourceTimeout error");
+  // console.log(e.errorCode);   // it'll probably be 408
+  // console.log(e.errorString); // it'll probably be 'Network timeout on resource'
+  // console.log(e.url);         // the url whose request timed out
+  phantom.exit(1);
+};
+page.onResourceError = function (resourceError) {
+};
+page.onLoadFinished = function (status) {
   if (status !== 'success') {
-    console.log('Unable to access network');
+    console.log("phantomjs status:" + status);
+    exit();
   } else {
     var cookies = new Array();
     for (var i in page.cookies) {
@@ -209,7 +222,7 @@ page.onLoadFinished = function(status) {
         if (obj == 'name' || obj == 'value') {
           continue;
         }
-        c += "; " + 　obj + "=" + cookie[obj];
+        c += "; " + obj + "=" + cookie[obj];
       }
       cookies[i] = c;
     }
@@ -219,18 +232,13 @@ page.onLoadFinished = function(status) {
       "Body": page.content
     };
 
-    if (page.content.indexOf("div") != -1) {
+    if (page.content.indexOf("body") != -1) {
       ret = JSON.stringify(resp);
       exit();
     }
   }
 };
 
-page.open(url, method, postdata, function(status) {});
-
-if (timeout > 0) {
-  setTimeout(function() {
-    exit();
-  }, timeout)
-}
+page.open(url, method, postdata, function (status) {
+});
 `

@@ -133,6 +133,10 @@ func (surf *Surf) httpRequest(param *Request) (resp *http.Response, err error) {
 		}
 	} else {
 		for i := 0; i < param.TryTimes; i++ {
+			if i != 0 {
+				time.Sleep(param.RetryPause)
+			}
+
 			resp, err = param.client.Do(req)
 			if err != nil {
 				if !param.EnableCookie {
@@ -140,7 +144,6 @@ func (surf *Surf) httpRequest(param *Request) (resp *http.Response, err error) {
 					r := rand.New(rand.NewSource(time.Now().UnixNano()))
 					req.Header.Set("User-Agent", UserAgents["common"][r.Intn(l)])
 				}
-				time.Sleep(param.RetryPause)
 				continue
 			}
 			break

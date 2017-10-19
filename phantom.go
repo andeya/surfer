@@ -21,6 +21,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"net/http/cookiejar"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,6 +37,7 @@ type (
 		PhantomjsFile string            //Phantomjs完整文件名
 		TempJsDir     string            //临时js存放目录
 		jsFileMap     map[string]string //已存在的js文件
+		CookieJar     *cookiejar.Jar
 	}
 	// Response 用于解析Phantomjs的响应内容
 	Response struct {
@@ -45,11 +47,16 @@ type (
 )
 
 // NewPhantom 创建一个Phantomjs下载器
-func NewPhantom(phantomjsFile, tempJsDir string) Surfer {
+func NewPhantom(phantomjsFile, tempJsDir string, jar ...*cookiejar.Jar) Surfer {
 	phantom := &Phantom{
 		PhantomjsFile: phantomjsFile,
 		TempJsDir:     tempJsDir,
 		jsFileMap:     make(map[string]string),
+	}
+	if len(jar) != 0 {
+		phantom.CookieJar = jar[0]
+	} else {
+		phantom.CookieJar, _ = cookiejar.New(nil)
 	}
 	if !filepath.IsAbs(phantom.PhantomjsFile) {
 		phantom.PhantomjsFile, _ = filepath.Abs(phantom.PhantomjsFile)
@@ -81,6 +88,13 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 	}
 
 	req.Header.Del("Content-Type")
+
+	if req.EnableCookie {
+		_req := http.Request{Header: req.Header}
+		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
+			_req.AddCookie(cookie)
+		}
+	}
 
 	var b, _ = req.ReadBody()
 
@@ -123,9 +137,14 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 			continue
 		}
 		resp.Header = req.Header
-		delete(resp.Header, "Set-Cookie")
+		resp.Header.Del("Set-Cookie")
 		for _, c := range retResp.Cookies {
 			resp.Header.Add("Set-Cookie", c)
+		}
+		if req.EnableCookie {
+			if rc := resp.Cookies(); len(rc) > 0 {
+				phantom.CookieJar.SetCookies(req.url, rc)
+			}
 		}
 		resp.Body = ioutil.NopCloser(strings.NewReader(retResp.Body))
 		break

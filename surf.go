@@ -30,13 +30,17 @@ import (
 
 // Surf is the default Download implementation.
 type Surf struct {
-	cookieJar *cookiejar.Jar
+	CookieJar *cookiejar.Jar
 }
 
 // New 创建一个Surf下载器
-func New() Surfer {
+func New(jar ...*cookiejar.Jar) Surfer {
 	s := new(Surf)
-	s.cookieJar, _ = cookiejar.New(nil)
+	if len(jar) != 0 {
+		s.CookieJar = jar[0]
+	} else {
+		s.CookieJar, _ = cookiejar.New(nil)
+	}
 	return s
 }
 
@@ -80,7 +84,7 @@ func (surf *Surf) buildClient(req *Request) *http.Client {
 	}
 
 	if req.EnableCookie {
-		client.Jar = surf.cookieJar
+		client.Jar = surf.CookieJar
 	}
 
 	transport := &http.Transport{

@@ -60,19 +60,15 @@ package surfer
 import (
 	"net/http"
 	"sync"
-	// "os"
-	// "path"
-	// "path/filepath"
 )
 
 var (
-	surf         Surfer
-	phantom      Surfer
-	once_surf    sync.Once
-	once_phantom sync.Once
-	tempJsDir    = "./tmp"
-	// phantomjsFile = filepath.Clean(path.Join(os.Getenv("GOPATH"), `/src/github.com/henrylee2cn/surfer/phantomjs/phantomjs`))
-	phantomjsFile = `./phantomjs`
+	surf          Surfer
+	phantom       Surfer
+	once_surf     sync.Once
+	once_phantom  sync.Once
+	tempJsDir     = "./tmp"
+	phantomjsFile = "./phantomjs"
 )
 
 // Download 实现surfer下载器接口

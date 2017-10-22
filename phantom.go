@@ -90,8 +90,10 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 	req.Header.Del("Content-Type")
 
 	if req.EnableCookie {
+		log.Println("req.EnableCookie:", req.EnableCookie)
 		_req := http.Request{Header: req.Header}
 		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
+			log.Println("liguoqinjim cookie:", cookie)
 			_req.AddCookie(cookie)
 		}
 	}

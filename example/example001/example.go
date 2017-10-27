@@ -1,4 +1,4 @@
-package main
+package example001
 
 import (
 	"github.com/henrylee2cn/surfer"

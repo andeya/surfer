@@ -156,7 +156,8 @@ func (r *Request) writeback(resp *http.Response) *http.Response {
 	resp.Request.Host = r.url.Host
 
 	// reset url
-	r.url = nil
+	//todo 会引起bug
+	//r.url = nil
 
 	return resp
 }

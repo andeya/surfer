@@ -29,6 +29,7 @@ func main() {
 	jar.SetCookies(u, cookies)
 
 	//查看cookie
+	log.Println("查看cookie" + HR)
 	phantomSurfer := surfer.NewPhantom("E:\\Workspace\\go-labs\\src\\lab089\\phantomjs.exe", "./tmp", jar)
 	resp, err := phantomSurfer.Download(&surfer.Request{
 		Url:          "http://httpbin.org/cookies",
@@ -46,6 +47,7 @@ func main() {
 	log.Println("resp.Body=", string(b))
 
 	//设置cookie
+	log.Println("设置cookie" + HR)
 	resp, err = phantomSurfer.Download(&surfer.Request{
 		Url:          "http://httpbin.org/cookies/set?k2=v2&k1=v1",
 		EnableCookie: true,

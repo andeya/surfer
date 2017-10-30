@@ -93,13 +93,14 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		log.Println("req.EnableCookie:", req.EnableCookie)
 		_req := http.Request{Header: req.Header}
 		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
-			log.Println("liguoqinjim cookie:", cookie)
+			log.Println("liguoqinjim 发起请求前添加cookie:", cookie)
 			_req.AddCookie(cookie)
 		}
 	}
 
 	var b, _ = req.ReadBody()
 
+	//todo writeback里面的重置url会引起Bug
 	resp = req.writeback(resp)
 
 	var args = []string{
@@ -159,6 +160,9 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		resp.StatusCode = http.StatusBadGateway
 		resp.Status = err.Error()
 	}
+
+	log.Printf("liguoqinjim 访问后cookies:%+v", phantom.CookieJar.Cookies(req.url))
+
 	return resp, err
 }
 

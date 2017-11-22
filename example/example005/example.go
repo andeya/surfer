@@ -39,7 +39,6 @@ func main() {
 	handleError(err)
 
 	log.Println("resp.Status=", resp.Status)
-	log.Println("resp.Header=", resp.Header)
 
 	b, err := ioutil.ReadAll(resp.Body)
 	handleError(err)
@@ -56,7 +55,6 @@ func main() {
 	handleError(err)
 
 	log.Println("resp.Status=", resp.Status)
-	log.Println("resp.Header=", resp.Header)
 
 	b, err = ioutil.ReadAll(resp.Body)
 	handleError(err)

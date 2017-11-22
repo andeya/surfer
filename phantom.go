@@ -93,7 +93,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		log.Println("req.EnableCookie:", req.EnableCookie)
 		_req := http.Request{Header: req.Header}
 		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
-			log.Println("liguoqinjim 发起请求前添加cookie:", cookie)
+			log.Println("liguoqinjim 发起请求前添加cookie:", cookie.Name, cookie.Value, req.url)
 			_req.AddCookie(cookie)
 		}
 	}
@@ -113,6 +113,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		strings.ToLower(req.Method),
 		fmt.Sprint(int(req.DialTimeout / time.Millisecond)),
 	}
+	log.Printf("liguoqinjim args:%+v", args)
 
 	for i := 0; i < req.TryTimes; i++ {
 		if i != 0 {

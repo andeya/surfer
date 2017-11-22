@@ -28,7 +28,7 @@ func main() {
 	u, _ := url.Parse("http://httpbin.org/cookies")
 	jar1.SetCookies(u, cookies)
 
-	//查看cookie
+	//查看cookie-------------------------------------------------------------------------------------
 	log.Println("查看Cookie" + HR)
 	defaultSurfer := surfer.New(jar1)
 	resp, err := defaultSurfer.Download(&surfer.Request{
@@ -43,7 +43,7 @@ func main() {
 	log.Println("body=", string(b))
 	log.Println("cookie=", jar1.Cookies(u))
 
-	//设置cookie
+	//设置cookie-------------------------------------------------------------------------------------
 	log.Println("设置Cookie" + HR)
 	resp, err = defaultSurfer.Download(&surfer.Request{
 		Url:          "http://httpbin.org/cookies/set?k2=v2&k1=v1",

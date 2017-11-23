@@ -44,6 +44,13 @@ type (
 		Cookies []string
 		Body    string
 	}
+
+	Cookie struct {
+		Name   string `json:"name"`
+		Value  string `json:"value"`
+		Domain string `json:"domain"`
+		Path   string `json:"path"`
+	}
 )
 
 // NewPhantom 创建一个Phantomjs下载器
@@ -89,12 +96,27 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 
 	req.Header.Del("Content-Type")
 
+	cookie := ""
 	if req.EnableCookie {
 		log.Println("req.EnableCookie:", req.EnableCookie)
-		_req := http.Request{Header: req.Header}
-		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
-			log.Println("liguoqinjim 发起请求前添加cookie:", cookie.Name, cookie.Value, req.url)
-			_req.AddCookie(cookie)
+
+		httpCookies := phantom.CookieJar.Cookies(req.url)
+		log.Println("liguoqinjim host:", req.url.Host)
+		if len(httpCookies) > 0 {
+			surferCookies := make([]*Cookie, len(httpCookies))
+
+			for n, c := range httpCookies {
+				log.Println("liguoqinjim 发起请求前添加cookie:", c.Name, c.Value, c.Domain, c.Path)
+				surferCookie := &Cookie{Name: c.Name, Value: c.Value, Domain: req.url.Host, Path: "/"}
+				surferCookies[n] = surferCookie
+			}
+
+			c, err := json.Marshal(surferCookies)
+			if err != nil {
+				log.Printf("cookie marshal error:%v", err)
+			}
+			cookie = string(c)
+			cookie = strings.Replace(cookie, `"`, `\"`, -1)
 		}
 	}
 
@@ -106,7 +128,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 	var args = []string{
 		phantom.jsFileMap["js"],
 		req.Url,
-		req.Header.Get("Cookie"),
+		cookie,
 		encoding,
 		req.Header.Get("User-Agent"),
 		string(b),

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"time"
 )
 
 const (
@@ -35,6 +36,7 @@ func main() {
 		Url:          "http://httpbin.org/cookies",
 		EnableCookie: true,
 		DownloaderID: 1,
+		DialTimeout:  time.Second * 5,
 	})
 	handleError(err)
 
@@ -51,6 +53,7 @@ func main() {
 		Url:          "http://httpbin.org/cookies/set?k2=v2&k1=v1",
 		EnableCookie: true,
 		DownloaderID: 1,
+		DialTimeout:  time.Second * 5,
 	})
 	handleError(err)
 

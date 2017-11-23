@@ -43,6 +43,11 @@ type (
 	Response struct {
 		Cookies []string
 		Body    string
+		Error   string
+		Header  []struct {
+			Name  string
+			Value string
+		}
 	}
 
 	Cookie struct {
@@ -156,14 +161,25 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		retResp := Response{}
 		err = json.Unmarshal(b, &retResp)
 		if err != nil {
-			log.Println("surfer phantomjs out:", string(b))
+			log.Printf("json unmarshal error:%v", err)
 			continue
+		} else {
+			log.Println("liguoqinjim 打印结果")
+			log.Println(retResp.Header)
 		}
-		resp.Header = req.Header
-		resp.Header.Del("Set-Cookie")
+
+		//设置header
+		for _, h := range retResp.Header {
+
+			log.Println("liguoqinjim header ", h.Name, h.Value)
+			//resp.Header.Add(h.Name, h.Value)
+		}
+
+		//设置cookie
 		for _, c := range retResp.Cookies {
 			resp.Header.Add("Set-Cookie", c)
 		}
+
 		if req.EnableCookie {
 			if rc := resp.Cookies(); len(rc) > 0 {
 				phantom.CookieJar.SetCookies(req.url, rc)
@@ -228,9 +244,9 @@ var postdata = system.args[5];
 var method = system.args[6];
 var timeout = system.args[7];
 
-var ret = "";
+var ret = new Object();
 var exit = function () {
-    console.log(ret);
+    console.log(JSON.stringify(ret));
     phantom.exit();
 };
 
@@ -275,16 +291,8 @@ function addCookie() {
 
 addCookie();
 
-//强制设置cookie
-// phantom.addCookie({
-//     'name': 'k3', /* required property */
-//     'value': 'v3', /* required property */
-//     'domain': 'httpbin.org',
-//     'path': '/', /* required property */
-// });
-
 page.onResourceRequested = function (requestData, request) {
-    request.setHeader('Cookie', cookie)
+
 };
 page.onResourceReceived = function (response) {
     if (response.stage === "end") {
@@ -299,25 +307,36 @@ page.onResourceReceived = function (response) {
         // }
         //
         // console.log("liguoqinjim received2------------------------------------------------");
+
+        //在ret中加入header
+        ret["Header"] = response.headers;
     }
 };
 page.onError = function (msg, trace) {
-    console.log("error:" + msg);
-    ret = JSON.stringify(msg);
+    ret["Error"] = msg;
     exit();
 };
 page.onResourceTimeout = function (e) {
-    console.log("phantomjs onResourceTimeout error");
+    // console.log("phantomjs onResourceTimeout error");
     // console.log(e.errorCode);   // it'll probably be 408
     // console.log(e.errorString); // it'll probably be 'Network timeout on resource'
     // console.log(e.url);         // the url whose request timed out
-    phantom.exit(1);
+    // phantom.exit(1);
+    ret["Error"] = "onResourceTimeout";
+    exit();
 };
-page.onResourceError = function (resourceError) {
+page.onResourceError = function (e) {
+    // console.log("onResourceError");
+    // console.log("1:" + e.errorCode + "," + e.errorString);
+
+    if (e.errorCode != 5) { //errorCode=5的情况和onResourceTimeout冲突
+        ret["Error"] = "onResourceError";
+        exit();
+    }
 };
 page.onLoadFinished = function (status) {
     if (status !== 'success') {
-        console.log("phantomjs status:" + status);
+        ret["Error"] = "status=" + status;
         exit();
     } else {
         var cookies = new Array();
@@ -338,14 +357,11 @@ page.onLoadFinished = function (status) {
             }
             cookies[i] = c;
         }
-
-        var resp = {
-            "Cookies": cookies,
-            "Body": page.content
-        };
-
         if (page.content.indexOf("body") != -1) {
-            ret = JSON.stringify(resp);
+            ret["Cookies"] = cookies;
+            ret["Body"] = page.content;
+
+            // ret = JSON.stringify(resp);
             exit();
         }
     }

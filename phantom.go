@@ -50,6 +50,7 @@ type (
 		}
 	}
 
+	//给phantomjs传输cookie用
 	Cookie struct {
 		Name   string `json:"name"`
 		Value  string `json:"value"`
@@ -117,13 +118,10 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 				log.Printf("cookie marshal error:%v", err)
 			}
 			cookie = string(c)
-			//cookie = strings.Replace(cookie, `"`, `\"`, -1)
 		}
 	}
 
 	var b, _ = req.ReadBody()
-
-	//todo writeback里面的重置url会引起Bug
 	resp = req.writeback(resp)
 
 	var args = []string{
@@ -131,8 +129,6 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		req.Url,
 		cookie,
 		encoding,
-		//fmt.Sprintf(`"%s"`, req.Header.Get("User-Agent")),
-		//fmt.Sprintf(`"%s"`, string(b)),
 		req.Header.Get("User-Agent"),
 		string(b),
 		strings.ToLower(req.Method),
@@ -155,31 +151,28 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		var b []byte
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("surfer read phantomjs out error:", err)
 			continue
 		}
 		retResp := Response{}
 		err = json.Unmarshal(b, &retResp)
 		if err != nil {
-			log.Printf("json unmarshal error:%v", err)
 			continue
-		} else {
-			log.Println("liguoqinjim 打印结果")
-			log.Println(retResp.Header)
+		}
+
+		if retResp.Error != "" {
+			log.Printf("phantomjs response error:%s", retResp.Error)
+			continue
 		}
 
 		//设置header
 		for _, h := range retResp.Header {
-
-			log.Println("liguoqinjim header ", h.Name, h.Value)
-			//resp.Header.Add(h.Name, h.Value)
+			resp.Header.Add(h.Name, h.Value)
 		}
 
 		//设置cookie
 		for _, c := range retResp.Cookies {
 			resp.Header.Add("Set-Cookie", c)
 		}
-
 		if req.EnableCookie {
 			if rc := resp.Cookies(); len(rc) > 0 {
 				phantom.CookieJar.SetCookies(req.url, rc)

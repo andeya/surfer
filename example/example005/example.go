@@ -63,6 +63,10 @@ func main() {
 	handleError(err)
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
+
+	//删除js文件
+	phantomSurfer.(*surfer.Phantom).DestroyJsFiles()
+	time.Sleep(10e9)
 }
 
 func handleError(err error) {

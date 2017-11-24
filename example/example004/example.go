@@ -56,7 +56,7 @@ func main() {
 	resp.Body.Close()
 	log.Println("body=", string(b))
 
-	log.Println(jar1.Cookies(u))
+	log.Println("cookie=", jar1.Cookies(u))
 }
 
 func handleError(err error) {

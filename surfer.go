@@ -59,6 +59,7 @@ package surfer
 
 import (
 	"net/http"
+	"net/http/cookiejar"
 	"sync"
 )
 
@@ -69,16 +70,17 @@ var (
 	once_phantom  sync.Once
 	tempJsDir     = "./tmp"
 	phantomjsFile = "./phantomjs"
+	cookieJar, _  = cookiejar.New(nil)
 )
 
 // Download 实现surfer下载器接口
 func Download(req *Request) (resp *http.Response, err error) {
 	switch req.DownloaderID {
 	case SurfID:
-		once_surf.Do(func() { surf = New() })
+		once_surf.Do(func() { surf = New(cookieJar) })
 		resp, err = surf.Download(req)
 	case PhomtomJsID:
-		once_phantom.Do(func() { phantom = NewPhantom(phantomjsFile, tempJsDir) })
+		once_phantom.Do(func() { phantom = NewPhantom(phantomjsFile, tempJsDir, cookieJar) })
 		resp, err = phantom.Download(req)
 	}
 	return

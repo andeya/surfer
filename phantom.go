@@ -43,6 +43,19 @@ type (
 	Response struct {
 		Cookies []string
 		Body    string
+		Error   string
+		Header  []struct {
+			Name  string
+			Value string
+		}
+	}
+
+	//给phantomjs传输cookie用
+	Cookie struct {
+		Name   string `json:"name"`
+		Value  string `json:"value"`
+		Domain string `json:"domain"`
+		Path   string `json:"path"`
 	}
 )
 
@@ -89,21 +102,32 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 
 	req.Header.Del("Content-Type")
 
+	cookie := ""
 	if req.EnableCookie {
-		_req := http.Request{Header: req.Header}
-		for _, cookie := range phantom.CookieJar.Cookies(req.url) {
-			_req.AddCookie(cookie)
+		httpCookies := phantom.CookieJar.Cookies(req.url)
+		if len(httpCookies) > 0 {
+			surferCookies := make([]*Cookie, len(httpCookies))
+
+			for n, c := range httpCookies {
+				surferCookie := &Cookie{Name: c.Name, Value: c.Value, Domain: req.url.Host, Path: "/"}
+				surferCookies[n] = surferCookie
+			}
+
+			c, err := json.Marshal(surferCookies)
+			if err != nil {
+				log.Printf("cookie marshal error:%v", err)
+			}
+			cookie = string(c)
 		}
 	}
 
 	var b, _ = req.ReadBody()
-
 	resp = req.writeback(resp)
 
 	var args = []string{
 		phantom.jsFileMap["js"],
 		req.Url,
-		req.Header.Get("Cookie"),
+		cookie,
 		encoding,
 		req.Header.Get("User-Agent"),
 		string(b),
@@ -127,17 +151,25 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		var b []byte
 		b, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Println("surfer read phantomjs out error:", err)
 			continue
 		}
 		retResp := Response{}
 		err = json.Unmarshal(b, &retResp)
 		if err != nil {
-			log.Println("surfer phantomjs out:", string(b))
 			continue
 		}
-		resp.Header = req.Header
-		resp.Header.Del("Set-Cookie")
+
+		if retResp.Error != "" {
+			log.Printf("phantomjs response error:%s", retResp.Error)
+			continue
+		}
+
+		//设置header
+		for _, h := range retResp.Header {
+			resp.Header.Add(h.Name, h.Value)
+		}
+
+		//设置cookie
 		for _, c := range retResp.Cookies {
 			resp.Header.Add("Set-Cookie", c)
 		}
@@ -157,6 +189,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		resp.StatusCode = http.StatusBadGateway
 		resp.Status = err.Error()
 	}
+
 	return resp, err
 }
 
@@ -203,59 +236,128 @@ var userAgent = system.args[4];
 var postdata = system.args[5];
 var method = system.args[6];
 var timeout = system.args[7];
-var ret = "";
+
+var ret = new Object();
 var exit = function () {
-  console.log(ret);
-  phantom.exit();
+    console.log(JSON.stringify(ret));
+    phantom.exit();
 };
+
+//输出参数
+// console.log("url=" + url);
+// console.log("cookie=" + cookie);
+// console.log("pageEncode=" + pageEncode);
+// console.log("userAgent=" + userAgent);
+// console.log("postdata=" + postdata);
+// console.log("method=" + method);
+// console.log("timeout=" + timeout);
+
+// ret += (url + "\n");
+// ret += (cookie + "\n");
+// ret += (pageEncode + "\n");
+// ret += (userAgent + "\n");
+// ret += (postdata + "\n");
+// ret += (method + "\n");
+// ret += (timeout + "\n");
+// exit();
 
 phantom.outputEncoding = pageEncode;
 page.settings.userAgent = userAgent;
 page.settings.resourceTimeout = timeout;
 page.settings.XSSAuditingEnabled = true;
+
+function addCookie() {
+    if (cookie != "") {
+        var cookies = JSON.parse(cookie);
+        for (var i = 0; i < cookies.length; i++) {
+            var c = cookies[i];
+
+            phantom.addCookie({
+                'name': c.name, /* required property */
+                'value': c.value, /* required property */
+                'domain': c.domain,
+                'path': c.path, /* required property */
+            });
+        }
+    }
+}
+
+addCookie();
+
 page.onResourceRequested = function (requestData, request) {
-  request.setHeader('Cookie', cookie)
+
+};
+page.onResourceReceived = function (response) {
+    if (response.stage === "end") {
+        // console.log("liguoqinjim received1------------------------------------------------");
+        // console.log("url=" + response.url);
+        //
+        // for (var j in response.headers) {//用javascript的for/in循环遍历对象的属性
+        //     // var m = sprintf("AttrId[%d]Value[%d]", j, result.Attrs[j]);
+        //     // message += m;
+        //     // console.log(response.headers[j]);
+        //     console.log(response.headers[j]["name"] + ":" + response.headers[j]["value"]);
+        // }
+        //
+        // console.log("liguoqinjim received2------------------------------------------------");
+
+        //在ret中加入header
+        ret["Header"] = response.headers;
+    }
 };
 page.onError = function (msg, trace) {
-  console.log("error:" + msg);
+    ret["Error"] = msg;
+    exit();
 };
 page.onResourceTimeout = function (e) {
-  console.log("phantomjs onResourceTimeout error");
-  // console.log(e.errorCode);   // it'll probably be 408
-  // console.log(e.errorString); // it'll probably be 'Network timeout on resource'
-  // console.log(e.url);         // the url whose request timed out
-  phantom.exit(1);
+    // console.log("phantomjs onResourceTimeout error");
+    // console.log(e.errorCode);   // it'll probably be 408
+    // console.log(e.errorString); // it'll probably be 'Network timeout on resource'
+    // console.log(e.url);         // the url whose request timed out
+    // phantom.exit(1);
+    ret["Error"] = "onResourceTimeout";
+    exit();
 };
-page.onResourceError = function (resourceError) {
+page.onResourceError = function (e) {
+    // console.log("onResourceError");
+    // console.log("1:" + e.errorCode + "," + e.errorString);
+
+    if (e.errorCode != 5) { //errorCode=5的情况和onResourceTimeout冲突
+        ret["Error"] = "onResourceError";
+        exit();
+    }
 };
 page.onLoadFinished = function (status) {
-  if (status !== 'success') {
-    console.log("phantomjs status:" + status);
-    exit();
-  } else {
-    var cookies = new Array();
-    for (var i in page.cookies) {
-      var cookie = page.cookies[i];
-      var c = cookie["name"] + "=" + cookie["value"];
-      for (var obj in cookie) {
-        if (obj == 'name' || obj == 'value') {
-          continue;
+    if (status !== 'success') {
+        ret["Error"] = "status=" + status;
+        exit();
+    } else {
+        var cookies = new Array();
+        for (var i in page.cookies) {
+            var cookie = page.cookies[i];
+            var c = cookie["name"] + "=" + cookie["value"];
+            for (var obj in cookie) {
+                if (obj == 'name' || obj == 'value') {
+                    continue;
+                }
+                if (obj == "httponly" || obj == "secure") {
+                    if (cookie[obj] == true) {
+                        c += ";" + obj;
+                    }
+                } else {
+                    c += "; " + obj + "=" + cookie[obj];
+                }
+            }
+            cookies[i] = c;
         }
-        c += "; " + obj + "=" + cookie[obj];
-      }
-      cookies[i] = c;
-    }
+        if (page.content.indexOf("body") != -1) {
+            ret["Cookies"] = cookies;
+            ret["Body"] = page.content;
 
-    var resp = {
-      "Cookies": cookies,
-      "Body": page.content
-    };
-
-    if (page.content.indexOf("body") != -1) {
-      ret = JSON.stringify(resp);
-      exit();
+            // ret = JSON.stringify(resp);
+            exit();
+        }
     }
-  }
 };
 
 page.open(url, method, postdata, function (status) {

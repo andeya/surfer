@@ -122,8 +122,9 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 	}
 
 	var b, _ = req.ReadBody()
+	urlObj := req.url
 	resp = req.writeback(resp)
-	resp.Request.URL = req.url
+	resp.Request.URL = urlObj
 
 	var args = []string{
 		phantom.jsFileMap["js"],
@@ -176,7 +177,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		}
 		if req.EnableCookie {
 			if rc := resp.Cookies(); len(rc) > 0 {
-				phantom.CookieJar.SetCookies(resp.Request.URL, rc)
+				phantom.CookieJar.SetCookies(urlObj, rc)
 			}
 		}
 		resp.Body = ioutil.NopCloser(strings.NewReader(retResp.Body))

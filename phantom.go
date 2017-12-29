@@ -175,7 +175,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 		}
 		if req.EnableCookie {
 			if rc := resp.Cookies(); len(rc) > 0 {
-				phantom.CookieJar.SetCookies(req.url, rc)
+				phantom.CookieJar.SetCookies(resp.Request.URL, rc)
 			}
 		}
 		resp.Body = ioutil.NopCloser(strings.NewReader(retResp.Body))

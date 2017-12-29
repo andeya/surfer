@@ -123,6 +123,7 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 
 	var b, _ = req.ReadBody()
 	resp = req.writeback(resp)
+	resp.Request.URL = req.url
 
 	var args = []string{
 		phantom.jsFileMap["js"],

@@ -156,7 +156,6 @@ func (r *Request) writeback(resp *http.Response) *http.Response {
 	resp.Request.Method = r.Method
 	resp.Request.Header = r.Header
 	resp.Request.Host = r.url.Host
-	resp.Request.URL = r.url
 	r.url = nil
 
 	return resp

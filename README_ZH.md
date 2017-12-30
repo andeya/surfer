@@ -1,9 +1,9 @@
-# surfer    [![GoDoc](https://godoc.org/github.com/tsuna/gohbase?status.png)](https://godoc.org/github.com/henrylee2cn/surfer) [![GitHub release](https://img.shields.io/github/release/henrylee2cn/surfer.svg)](https://github.com/henrylee2cn/surfer/releases)
+# Surfer [![GitHub release](https://img.shields.io/github/release/henrylee2cn/surfer.svg?style=flat-square)](https://github.com/henrylee2cn/surfer/releases) [![report card](https://goreportcard.com/badge/github.com/henrylee2cn/surfer?style=flat-square)](http://goreportcard.com/report/henrylee2cn/surfer) [![github issues](https://img.shields.io/github/issues/henrylee2cn/surfer.svg?style=flat-square)](https://github.com/henrylee2cn/surfer/issues?q=is%3Aopen+is%3Aissue) [![github closed issues](https://img.shields.io/github/issues-closed-raw/henrylee2cn/surfer.svg?style=flat-square)](https://github.com/henrylee2cn/surfer/issues?q=is%3Aissue+is%3Aclosed) [![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/henrylee2cn/surfer) [![view Go大数据](https://img.shields.io/badge/官方QQ群-Go大数据(42731170)-27a5ea.svg?style=flat-square)](http://jq.qq.com/?_wv=1027&k=fzi4p1)
 
 
 Surfer 是一款Go语言编写的高并发 web 客户端，拥有surf与phantom两种下载内核，高度模拟浏览器行为，可实现模拟登录等功能。
 
-高并发爬虫[Pholcus](https://github.com/henrylee2cn/pholcus)的专用下载器。（官方QQ群：Go大数据 42731170，欢迎加入我们的讨论）
+高并发爬虫[Pholcus](https://github.com/henrylee2cn/pholcus)的专用下载器。
 
 ## 特性
 

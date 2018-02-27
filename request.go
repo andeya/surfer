@@ -151,7 +151,9 @@ func (r *Request) writeback(resp *http.Response) *http.Response {
 		resp.Request = new(http.Request)
 	}
 
-	resp.Header = make(http.Header)
+	if resp.Header == nil {
+		resp.Header = make(http.Header)
+	}
 
 	resp.Request.Method = r.Method
 	resp.Request.Header = r.Header

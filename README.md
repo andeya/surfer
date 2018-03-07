@@ -48,7 +48,7 @@ func main() {
     surfer.DestroyJsFiles()
 }
 ```
-[Full example](https://github.com/henrylee2cn/thinkgo/raw/master/samples)
+[Full example](https://github.com/henrylee2cn/surfer/tree/master/example)
 
 ## License
 

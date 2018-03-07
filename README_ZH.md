@@ -50,7 +50,7 @@ func main() {
 }
 ```
 
-[完整示例](https://github.com/henrylee2cn/surfer/blob/master/example/example.go)
+[完整示例](https://github.com/henrylee2cn/surfer/tree/master/example)
 
 
 ## 开源协议

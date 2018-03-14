@@ -26,6 +26,8 @@ import (
 	"net/http/cookiejar"
 	"strings"
 	"time"
+
+	"github.com/henrylee2cn/goutil"
 )
 
 // Surf is the default Download implementation.
@@ -50,6 +52,7 @@ func (surf *Surf) Download(param *Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+	param.Header.Set("Connection", "close")
 	param.client = surf.buildClient(param)
 	resp, err := surf.httpRequest(param)
 
@@ -77,6 +80,27 @@ func (surf *Surf) Download(param *Request) (*http.Response, error) {
 	return param.writeback(resp), err
 }
 
+var dnsCache = &DnsCache{ipPortLib: goutil.AtomicMap()}
+
+// DnsCache DNS cache
+type DnsCache struct {
+	ipPortLib goutil.Map
+}
+
+// Reg registers DNS to cache.
+func (d *DnsCache) Reg(addr, ipPort string) {
+	d.ipPortLib.Store(addr, ipPort)
+}
+
+// Query queries DNS from cache.
+func (d *DnsCache) Query(addr string) (string, bool) {
+	ipPort, ok := d.ipPortLib.Load(addr)
+	if !ok {
+		return "", false
+	}
+	return ipPort.(string), true
+}
+
 // buildClient creates, configures, and returns a *http.Client type.
 func (surf *Surf) buildClient(req *Request) *http.Client {
 	client := &http.Client{
@@ -89,7 +113,20 @@ func (surf *Surf) buildClient(req *Request) *http.Client {
 
 	transport := &http.Transport{
 		Dial: func(network, addr string) (net.Conn, error) {
-			c, err := net.DialTimeout(network, addr, req.DialTimeout)
+			var (
+				c          net.Conn
+				err        error
+				ipPort, ok = dnsCache.Query(addr)
+			)
+			if !ok {
+				ipPort = addr
+				defer func() {
+					if err == nil {
+						dnsCache.Reg(addr, c.RemoteAddr().String())
+					}
+				}()
+			}
+			c, err = net.DialTimeout(network, ipPort, req.DialTimeout)
 			if err != nil {
 				return nil, err
 			}

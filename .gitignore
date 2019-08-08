@@ -38,3 +38,4 @@ _testmain.go
 *.sublime-workspace
 
 phantomjs/*
+.DS_Store

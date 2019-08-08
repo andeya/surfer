@@ -179,6 +179,7 @@ func (surf *Surf) httpRequest(param *Request) (resp *http.Response, err error) {
 					req.Header.Set("User-Agent", UserAgents["common"][r.Intn(l)])
 				}
 				time.Sleep(param.RetryPause)
+				param.renewBody()
 				continue
 			}
 			break
@@ -187,8 +188,8 @@ func (surf *Surf) httpRequest(param *Request) (resp *http.Response, err error) {
 		for i := 0; i < param.TryTimes; i++ {
 			if i != 0 {
 				time.Sleep(param.RetryPause)
+				param.renewBody()
 			}
-
 			resp, err = param.client.Do(req)
 			if err != nil {
 				if !param.EnableCookie {

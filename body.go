@@ -18,12 +18,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
-	"io"
-	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/url"
-	"strings"
+
+	"github.com/henrylee2cn/goutil"
 )
 
 // body set request body
@@ -42,6 +40,7 @@ var _ body = new(Content)
 // SetBody sets request body
 func (c *Content) SetBody(r *Request) error {
 	r.Header.Set("Content-Type", c.ContentType)
+	r.bodyBytes = c.Bytes
 	r.body = bytes.NewReader(c.Bytes)
 	return nil
 }
@@ -53,6 +52,7 @@ var _ body = Bytes("")
 
 // SetBody sets request body
 func (b Bytes) SetBody(r *Request) error {
+	r.bodyBytes = b
 	r.body = bytes.NewReader(b)
 	return nil
 }
@@ -76,36 +76,36 @@ var _ body = new(Form)
 
 // SetBody sets request body
 func (f Form) SetBody(r *Request) error {
-	if len(f.Files) > 0 {
-		pr, pw := io.Pipe()
-		bodyWriter := multipart.NewWriter(pw)
-		go func() {
-			for fieldname, postfiles := range f.Files {
-				for _, postfile := range postfiles {
-					fileWriter, err := bodyWriter.CreateFormFile(fieldname, postfile.Filename)
-					if err != nil {
-						log.Println("[E] Surfer: Multipart:", err)
-					}
-					_, err = fileWriter.Write(postfile.Bytes)
-					if err != nil {
-						log.Println("[E] Surfer: Multipart:", err)
-					}
-				}
-			}
-			for k, v := range f.Values {
-				for _, vv := range v {
-					bodyWriter.WriteField(k, vv)
-				}
-			}
-			bodyWriter.Close()
-			pw.Close()
-		}()
-		r.Header.Set("Content-Type", bodyWriter.FormDataContentType())
-		r.body = ioutil.NopCloser(pr)
-	} else {
+	if len(f.Files) == 0 {
 		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		r.body = strings.NewReader(url.Values(f.Values).Encode())
+		r.bodyBytes = goutil.StringToBytes(url.Values(f.Values).Encode())
+		r.body = bytes.NewReader(r.bodyBytes)
+		return nil
 	}
+
+	buf := bytes.NewBuffer(nil)
+	bodyWriter := multipart.NewWriter(buf)
+	for fieldname, postfiles := range f.Files {
+		for _, postfile := range postfiles {
+			fileWriter, err := bodyWriter.CreateFormFile(fieldname, postfile.Filename)
+			if err != nil {
+				return err
+			}
+			_, err = fileWriter.Write(postfile.Bytes)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	for k, v := range f.Values {
+		for _, vv := range v {
+			bodyWriter.WriteField(k, vv)
+		}
+	}
+	bodyWriter.Close()
+	r.Header.Set("Content-Type", bodyWriter.FormDataContentType())
+	r.bodyBytes = buf.Bytes()
+	r.body = buf
 	return nil
 }
 
@@ -124,6 +124,7 @@ func (obj *JSONObj) SetBody(r *Request) error {
 	if err != nil {
 		return err
 	}
+	r.bodyBytes = b
 	r.body = bytes.NewReader(b)
 	return nil
 }
@@ -143,6 +144,7 @@ func (obj *XMLObj) SetBody(r *Request) error {
 	if err != nil {
 		return err
 	}
+	r.bodyBytes = b
 	r.body = bytes.NewReader(b)
 	return nil
 }

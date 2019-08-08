@@ -15,9 +15,9 @@
 package surfer
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -48,8 +48,9 @@ type Request struct {
 	// 是否使用cookies，在Spider的EnableCookie设置
 	EnableCookie bool
 	// request body interface
-	Body body
-	body io.Reader
+	Body      body
+	body      io.Reader
+	bodyBytes []byte
 	// dial tcp: i/o timeout
 	DialTimeout time.Duration
 	// WSARecv tcp: i/o timeout
@@ -131,15 +132,20 @@ func (r *Request) prepare() error {
 	return nil
 }
 
-// ReadBody returns body bytes
-func (r *Request) ReadBody() (b []byte, err error) {
-	if r.url == nil {
-		r.prepare()
-	}
+func (r *Request) renewBody() {
 	if r.body != nil {
-		b, err = ioutil.ReadAll(r.body)
+		r.body = bytes.NewReader(r.bodyBytes)
 	}
-	return b, err
+}
+
+// ReadBody returns body bytes
+func (r *Request) ReadBody() ([]byte, error) {
+	if r.url == nil {
+		if err := r.prepare(); err != nil {
+			return nil, err
+		}
+	}
+	return r.bodyBytes, nil
 }
 
 // 回写Request内容
@@ -172,9 +178,9 @@ func (r *Request) checkRedirect(req *http.Request, via []*http.Request) error {
 	}
 	if len(via) >= r.RedirectTimes {
 		if r.RedirectTimes < 0 {
-			return fmt.Errorf("not allow redirects.")
+			return fmt.Errorf("not allow redirects")
 		}
-		return fmt.Errorf("stopped after %v redirects.", r.RedirectTimes)
+		return fmt.Errorf("stopped after %v redirects", r.RedirectTimes)
 	}
 	return nil
 }

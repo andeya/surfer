@@ -1,22 +1,22 @@
-# github.com/henrylee2cn/goutil v0.0.0-20190807075143-e8afa09140e9
+# github.com/henrylee2cn/goutil v0.0.0-20190925102525-a28b3dc837cc
 github.com/henrylee2cn/goutil
-# golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
-golang.org/x/net/html/charset
+# golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582
 golang.org/x/net/html
 golang.org/x/net/html/atom
+golang.org/x/net/html/charset
 # golang.org/x/text v0.3.0
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
-golang.org/x/text/transform
-golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/internal
+golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/japanese
 golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
-golang.org/x/text/language
-golang.org/x/text/internal/utf8internal
-golang.org/x/text/runes
 golang.org/x/text/internal/tag
+golang.org/x/text/internal/utf8internal
+golang.org/x/text/language
+golang.org/x/text/runes
+golang.org/x/text/transform

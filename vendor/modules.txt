@@ -28,3 +28,5 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
+# gopkg.in/yaml.v2 v2.2.8
+## explicit

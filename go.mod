@@ -8,6 +8,7 @@ require (
 require (
 	github.com/henrylee2cn/ameda v1.4.10 // indirect
 	golang.org/x/text v0.3.7 // indirect
+	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
 
 go 1.18

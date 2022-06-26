@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/henrylee2cn/surfer"
 	"log"
 	"time"
+
+	"github.com/andeya/surfer"
 )
 
 const (
@@ -11,7 +12,7 @@ const (
 )
 
 func main() {
-	//默认内核
+	// 默认内核
 	log.Println("默认内核timeout" + HR)
 	log.Println(time.Now(), "start")
 	resp, err := surfer.Download(&surfer.Request{
@@ -26,7 +27,7 @@ func main() {
 		log.Println("resp.Status=", resp.Status)
 	}
 
-	//phantomjs内核
+	// phantomjs内核
 	surfer.SetPhantomJsFilePath("E:/Workspace/go-labs/src/lab089/lab003/phantomjs/phantomjs.exe")
 	log.Println("phantomjs内核" + HR)
 	log.Println(time.Now(), "start")

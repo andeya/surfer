@@ -1,13 +1,14 @@
 package main
 
 import (
-	"github.com/henrylee2cn/surfer"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"time"
+
+	"github.com/andeya/surfer"
 )
 
 const (
@@ -15,7 +16,7 @@ const (
 )
 
 func main() {
-	//phantomjs内核
+	// phantomjs内核
 	jar, _ := cookiejar.New(nil)
 	var cookies []*http.Cookie
 	cookie := &http.Cookie{
@@ -29,7 +30,7 @@ func main() {
 	u, _ := url.Parse("http://httpbin.org/cookies")
 	jar.SetCookies(u, cookies)
 
-	//查看cookie------------------------------------------------------------------
+	// 查看cookie------------------------------------------------------------------
 	log.Println("查看cookie" + HR)
 	phantomSurfer := surfer.NewPhantom("E:\\Workspace\\go-labs\\src\\lab089\\phantomjs.exe", "./tmp", jar)
 	resp, err := phantomSurfer.Download(&surfer.Request{
@@ -47,7 +48,7 @@ func main() {
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
 
-	//设置cookie------------------------------------------------------------------
+	// 设置cookie------------------------------------------------------------------
 	log.Println("设置cookie" + HR)
 	resp, err = phantomSurfer.Download(&surfer.Request{
 		Url:          "http://httpbin.org/cookies/set?k2=v2&k1=v1",
@@ -64,7 +65,7 @@ func main() {
 	resp.Body.Close()
 	log.Println("resp.Body=", string(b))
 
-	//删除js文件
+	// 删除js文件
 	phantomSurfer.(*surfer.Phantom).DestroyJsFiles()
 	time.Sleep(10e9)
 }

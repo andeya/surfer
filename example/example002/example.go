@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/henrylee2cn/surfer"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"time"
+
+	"github.com/andeya/surfer"
 )
 
 const (
@@ -58,7 +59,7 @@ func main() {
 	resp, err = surfer.Download(&surfer.Request{
 		Url:          "http://httpbin.org/get",
 		DownloaderID: 1,
-		DialTimeout:  time.Millisecond * 2000, //设置超时时间
+		DialTimeout:  time.Millisecond * 2000, // 设置超时时间
 	})
 
 	handleError(err)
@@ -71,14 +72,14 @@ func main() {
 	log.Println("resp.Body=", string(b))
 
 	// 4.phantomjs内核POST下载测试开始---------------------------------------------------------------------------
-	surfer.SetPhantomJsFilePath("../phantomjs.exe") //相对路径
+	surfer.SetPhantomJsFilePath("../phantomjs.exe") // 相对路径
 	log.Println("phantomjs内核POST下载测试开始" + HR)
 	resp, err = surfer.Download(&surfer.Request{
 		DownloaderID: 1,
 		Url:          "http://httpbin.org/post",
 		Method:       "POST",
 		Body:         form,
-		DialTimeout:  time.Millisecond * 2000, //设置超时时间
+		DialTimeout:  time.Millisecond * 2000, // 设置超时时间
 	})
 	handleError(err)
 	log.Println("resp.Status=", resp.Status)

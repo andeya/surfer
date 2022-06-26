@@ -1,9 +1,13 @@
-// Deprecated: Use the "github.com/andeya/surfer" module instead.
-module github.com/henrylee2cn/surfer
+module github.com/andeya/surfer
 
 require (
-	github.com/henrylee2cn/goutil v0.0.0-20190925102525-a28b3dc837cc
-	golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582
+	github.com/andeya/goutil v0.0.0-20220626152529-9b7868da7b6d
+	golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
 )
 
-go 1.13
+require (
+	github.com/henrylee2cn/ameda v1.4.10 // indirect
+	golang.org/x/text v0.3.7 // indirect
+)
+
+go 1.18

@@ -1,4 +1,4 @@
-// Copyright 2015 henrylee2cn Author. All Rights Reserved.
+// Copyright 2015 andeya Author. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ type (
 	// 效率较surfer会慢很多，但是因为模拟浏览器，破防性更好
 	// 支持UserAgent/TryTimes/RetryPause/自定义js
 	Phantom struct {
-		PhantomjsFile string            //Phantomjs完整文件名
-		TempJsDir     string            //临时js存放目录
-		jsFileMap     map[string]string //已存在的js文件
+		PhantomjsFile string            // Phantomjs完整文件名
+		TempJsDir     string            // 临时js存放目录
+		jsFileMap     map[string]string // 已存在的js文件
 		CookieJar     *cookiejar.Jar
 	}
 	// Response 用于解析Phantomjs的响应内容
@@ -50,7 +50,7 @@ type (
 		}
 	}
 
-	//给phantomjs传输cookie用
+	// 给phantomjs传输cookie用
 	Cookie struct {
 		Name   string `json:"name"`
 		Value  string `json:"value"`
@@ -169,12 +169,12 @@ func (phantom *Phantom) Download(req *Request) (resp *http.Response, err error) 
 			continue
 		}
 
-		//设置header
+		// 设置header
 		for _, h := range retResp.Header {
 			resp.Header.Add(h.Name, h.Value)
 		}
 
-		//设置cookie
+		// 设置cookie
 		for _, c := range retResp.Cookies {
 			resp.Header.Add("Set-Cookie", c)
 		}

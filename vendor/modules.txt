@@ -1,10 +1,16 @@
-# github.com/henrylee2cn/goutil v0.0.0-20190925102525-a28b3dc837cc
-github.com/henrylee2cn/goutil
-# golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582
+# github.com/andeya/goutil v0.0.0-20220626152529-9b7868da7b6d
+## explicit; go 1.12
+github.com/andeya/goutil
+# github.com/henrylee2cn/ameda v1.4.10
+## explicit; go 1.13
+github.com/henrylee2cn/ameda
+# golang.org/x/net v0.0.0-20220624214902-1bab6f366d9e
+## explicit; go 1.17
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
-# golang.org/x/text v0.3.0
+# golang.org/x/text v0.3.7
+## explicit; go 1.17
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -15,6 +21,8 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language

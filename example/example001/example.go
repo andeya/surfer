@@ -1,11 +1,12 @@
 package example001
 
 import (
-	"github.com/henrylee2cn/surfer"
 	"io/ioutil"
 	"log"
 	"net/url"
 	"time"
+
+	"github.com/andeya/surfer"
 )
 
 func main() {

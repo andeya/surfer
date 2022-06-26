@@ -1,3 +1,4 @@
+// Deprecated: Use the "github.com/andeya/surfer" module instead.
 module github.com/henrylee2cn/surfer
 
 require (
